@@ -4,9 +4,16 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.activity.ComponentActivity
+import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
@@ -23,39 +31,37 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import kotlinx.coroutines.delay
 
 /**
  * Displays a GoogleMap centered on Miami.
  */
 
-@SuppressLint("MissingPermission") // we handle permission manually
+@SuppressLint("MissingPermission")
 @Composable
 fun MapScreen(
     context: Context,
     modifier: Modifier = Modifier,
     viewModel: MapViewModel = remember { MapViewModel() }
 ) {
-    // Remember a MapView tied to the Compose lifecycle
     val mapView = rememberMapViewWithLifecycle(context)
 
-    // State to hold the GoogleMap once initialized
     var googleMap by remember { mutableStateOf<GoogleMap?>(null) }
+    var lastUserLatLng by remember { mutableStateOf<LatLng?>(null) }
 
-    // ActivityResult API to request location permission
+    var showDialog by remember { mutableStateOf(false) }
+    var pendingLatLng by remember { mutableStateOf<LatLng?>(null) }
+    var pendingDistance by remember { mutableStateOf("") }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
-            if (isGranted) {
-                enableUserLocation(context, googleMap)
-            }
+            if (isGranted) enableUserLocation(context, googleMap)
         }
     )
 
-    // Check location permission once googleMap is ready
     LaunchedEffect(Unit) {
-        while (googleMap == null) {
-            kotlinx.coroutines.delay(100)
-        }
+        while (googleMap == null) delay(100)
         if (hasLocationPermission(context)) {
             enableUserLocation(context, googleMap)
         } else {
@@ -63,92 +69,114 @@ fun MapScreen(
         }
     }
 
-    // Display the MapView inside Compose
     AndroidView(
         factory = { mapView },
         modifier = modifier
-    ) { mapView ->
-        mapView.getMapAsync { gMap ->
+    ) { mv ->
+        mv.getMapAsync { gMap ->
             googleMap = gMap
-            setupMap(gMap, context, viewModel)
-        }
-    }
-}
 
+            val defaultLatLng = LatLng(25.7617, -80.1918)
+            gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
+            gMap.addMarker(
+                MarkerOptions()
+                    .position(defaultLatLng)
+                    .title("Miami")
+            )
 
-//Sets up the initial map state: centers on Miami and shows a marker.
-private fun setupMap(
-    googleMap: GoogleMap,
-    context: Context,
-    viewModel: MapViewModel
-) {
-    val defaultLatLng = LatLng(25.7617, -80.1918)
-    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
-    googleMap.addMarker(
-        MarkerOptions()
-            .position(defaultLatLng)
-            .title("Miami")
-    )
+            if (hasLocationPermission(context)) {
+                val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+                fusedClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        lastUserLatLng = LatLng(it.latitude, it.longitude)
+                    }
+                }
+            }
 
-    if (hasLocationPermission(context)) {
-        enableUserLocation(context, googleMap)
-    }
-
-    for (favorite in viewModel.favorites) {
-        googleMap.addMarker(
-            MarkerOptions()
-                .position(favorite.latLng)
-                .title(favorite.title)
-        )
-    }
-
-    googleMap.setOnMapClickListener { latLng ->
-        showAddFavoriteDialog(context, googleMap, viewModel, latLng)
-    }
-}
-private fun Double.format(digits: Int) = "%.${digits}f".format(this)
-
-private fun showAddFavoriteDialog(
-    context: Context,
-    googleMap: GoogleMap,
-    viewModel: MapViewModel,
-    latLng: LatLng
-) {
-    val activity = context as? ComponentActivity ?: return
-    activity.runOnUiThread {
-        var inputName = ""
-
-        val editText = android.widget.EditText(context).apply {
-            hint = "Enter place name"
-        }
-
-        android.app.AlertDialog.Builder(context)
-            .setTitle("Save location")
-            .setView(editText)
-            .setPositiveButton("Save") { _, _ ->
-                inputName = editText.text.toString().ifEmpty { "Unnamed place" }
-
-                viewModel.addFavorite(FavoriteLocation(inputName, latLng))
-
-                val marker = googleMap.addMarker(
+            for (favorite in viewModel.favorites) {
+                gMap.addMarker(
                     MarkerOptions()
-                        .position(latLng)
+                        .position(favorite.latLng)
+                        .title(favorite.title)
+                )
+            }
+
+            gMap.setOnMapClickListener { latLng ->
+                val distance = lastUserLatLng?.let {
+                    val meters = it.distanceTo(latLng)
+                    val miles = meters * 0.000621371
+                    "Distance: %.2f mi".format(miles)
+                } ?: "Unknown distance"
+
+                pendingLatLng = latLng
+                pendingDistance = distance
+                showDialog = true
+            }
+        }
+    }
+
+    if (showDialog && pendingLatLng != null) {
+        ShowAddFavoriteDialog(
+            distanceText = pendingDistance,
+            onConfirm = { inputName ->
+                val marker = googleMap?.addMarker(
+                    MarkerOptions()
+                        .position(pendingLatLng!!)
                         .title(inputName)
-                        .snippet("Lat: ${latLng.latitude.format(4)}, Lng: ${latLng.longitude.format(4)}")
+                        .snippet(pendingDistance)
                 )
                 marker?.showInfoWindow()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+
+                viewModel.addFavorite(FavoriteLocation(inputName, pendingLatLng!!))
+                showDialog = false
+            },
+            onDismiss = { showDialog = false }
+        )
     }
 }
 
+@Composable
+fun ShowAddFavoriteDialog(
+    initialName: String = "",
+    distanceText: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var inputName by remember { mutableStateOf(initialName) }
 
-//Enables showing the user's location on the map and moves the camera to it.
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Save location") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = inputName,
+                    onValueChange = { inputName = it },
+                    label = { Text("Enter place name") }
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(distanceText)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(inputName.ifEmpty { "Unnamed place" })
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// Helpers
 @SuppressLint("MissingPermission")
 private fun enableUserLocation(context: Context, googleMap: GoogleMap?) {
     googleMap?.isMyLocationEnabled = true
-
     val fusedClient = LocationServices.getFusedLocationProviderClient(context)
     fusedClient.lastLocation.addOnSuccessListener { location ->
         location?.let {
@@ -163,10 +191,20 @@ private fun enableUserLocation(context: Context, googleMap: GoogleMap?) {
     }
 }
 
-
-//Checks if the app currently has location permission granted.
 private fun hasLocationPermission(context: Context): Boolean {
     return ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
+}
+
+fun LatLng.distanceTo(other: LatLng): Float {
+    val start = Location("").apply {
+        latitude = this@distanceTo.latitude
+        longitude = this@distanceTo.longitude
+    }
+    val end = Location("").apply {
+        latitude = other.latitude
+        longitude = other.longitude
+    }
+    return start.distanceTo(end)
 }
