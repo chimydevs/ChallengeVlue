@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">ChallengeVlue</string>
+
+    <!-- Google Maps API Key -->
+    <string name="google_maps_key" translatable="false">AIzaSyCvLhcWHoDWQt3JcZYQPP8ZSGZPoCm0rbE</string>
+
 </resources>
