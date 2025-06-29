@@ -56,14 +56,14 @@ fun MapScreen(
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
-            if (isGranted) enableUserLocation(context, googleMap)
+            if (isGranted) enableUserLocation(context, googleMap, viewModel)
         }
     )
 
     LaunchedEffect(Unit) {
         while (googleMap == null) delay(100)
         if (hasLocationPermission(context)) {
-            enableUserLocation(context, googleMap)
+            enableUserLocation(context, googleMap, viewModel)
         } else {
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -94,19 +94,26 @@ fun MapScreen(
             }
 
             for (favorite in viewModel.favorites) {
+                val snippet = viewModel.userLocation?.let { userLoc ->
+                    val miles = userLoc.distanceToMiles(favorite.latLng)
+                    "Distance: %.2f mi".format(miles)
+                } ?: "Unknown distance"
+
+
                 gMap.addMarker(
                     MarkerOptions()
                         .position(favorite.latLng)
                         .title(favorite.title)
+                        .snippet(snippet)
                 )
             }
 
             gMap.setOnMapClickListener { latLng ->
-                val distance = lastUserLatLng?.let {
-                    val meters = it.distanceTo(latLng)
-                    val miles = meters * 0.000621371
+                val distance = viewModel.userLocation?.let { userLoc ->
+                    val miles = userLoc.distanceToMiles(latLng)
                     "Distance: %.2f mi".format(miles)
                 } ?: "Unknown distance"
+
 
                 pendingLatLng = latLng
                 pendingDistance = distance
@@ -175,12 +182,17 @@ fun ShowAddFavoriteDialog(
 
 // Helpers
 @SuppressLint("MissingPermission")
-private fun enableUserLocation(context: Context, googleMap: GoogleMap?) {
+private fun enableUserLocation(
+    context: Context,
+    googleMap: GoogleMap?,
+    viewModel: MapViewModel
+) {
     googleMap?.isMyLocationEnabled = true
     val fusedClient = LocationServices.getFusedLocationProviderClient(context)
     fusedClient.lastLocation.addOnSuccessListener { location ->
         location?.let {
             val userLatLng = LatLng(it.latitude, it.longitude)
+            viewModel.setUserLocation(userLatLng)
             googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 14f))
             googleMap?.addMarker(
                 MarkerOptions()
@@ -197,14 +209,15 @@ private fun hasLocationPermission(context: Context): Boolean {
     ) == PackageManager.PERMISSION_GRANTED
 }
 
-fun LatLng.distanceTo(other: LatLng): Float {
+fun LatLng.distanceToMiles(other: LatLng): Float {
     val start = Location("").apply {
-        latitude = this@distanceTo.latitude
-        longitude = this@distanceTo.longitude
+        latitude = this@distanceToMiles.latitude
+        longitude = this@distanceToMiles.longitude
     }
     val end = Location("").apply {
         latitude = other.latitude
         longitude = other.longitude
     }
-    return start.distanceTo(end)
+    val meters = start.distanceTo(end)
+    return meters * 0.000621371f
 }

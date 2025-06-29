@@ -22,6 +22,9 @@ open class MapViewModel : ViewModel() {
     private val _favorites = mutableStateListOf<FavoriteLocation>()
     open val favorites: List<FavoriteLocation> get() = _favorites
 
+    var userLocation: LatLng? = null
+        private set
+
     fun addFavorite(location: FavoriteLocation) {
         _favorites.add(location)
     }
@@ -36,4 +39,9 @@ open class MapViewModel : ViewModel() {
             _favorites[index] = favorite.copy(title = newTitle)
         }
     }
+
+    fun setUserLocation(latLng: LatLng) {
+        userLocation = latLng
+    }
+
 }
