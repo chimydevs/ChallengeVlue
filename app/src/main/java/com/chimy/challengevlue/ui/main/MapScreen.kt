@@ -15,6 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
+import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -29,7 +31,8 @@ import com.google.android.gms.maps.model.MarkerOptions
 @Composable
 fun MapScreen(
     context: Context,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: MapViewModel = remember { MapViewModel() }
 ) {
     // Remember a MapView tied to the Compose lifecycle
     val mapView = rememberMapViewWithLifecycle(context)
@@ -66,23 +69,43 @@ fun MapScreen(
     ) { mapView ->
         mapView.getMapAsync { gMap ->
             googleMap = gMap
-            setupMap(gMap, context)
+            setupMap(gMap, context, viewModel)
         }
     }
 }
 
 
 //Sets up the initial map state: centers on Miami and shows a marker.
-private fun setupMap(googleMap: GoogleMap, context: Context) {
-    val defaultLatLng = LatLng(25.7617, -80.1918) // Miami coordinates
+private fun setupMap(
+    googleMap: GoogleMap,
+    context: Context,
+    viewModel: MapViewModel
+) {
+    val defaultLatLng = LatLng(25.7617, -80.1918)
     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
+    googleMap.addMarker(
+        MarkerOptions()
+            .position(defaultLatLng)
+            .title("Miami")
+    )
 
-    // Only enable user location if permission is granted
     if (hasLocationPermission(context)) {
         enableUserLocation(context, googleMap)
     }
-}
 
+    googleMap.setOnMapClickListener { latLng ->
+        val title = "Favorite at ${latLng.latitude.format(4)}, ${latLng.longitude.format(4)}"
+        googleMap.addMarker(
+            MarkerOptions()
+                .position(latLng)
+                .title(title)
+        )
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
+
+        viewModel.addFavorite(FavoriteLocation(title, latLng))
+    }
+}
+private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 //Enables showing the user's location on the map and moves the camera to it.
 @SuppressLint("MissingPermission")
