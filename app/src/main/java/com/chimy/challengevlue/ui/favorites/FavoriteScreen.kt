@@ -1,17 +1,25 @@
 package com.chimy.challengevlue.ui.favorites
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.chimy.challengevlue.ui.components.EditFavoriteDialog
+import com.chimy.challengevlue.ui.components.FavoriteItem
 import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
 import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
 import com.chimy.challengevlue.ui.theme.ChallengeVlueTheme
@@ -26,6 +34,9 @@ fun FavoriteScreen(
     viewModel: MapViewModel,
     onBack: () -> Unit
 ) {
+    var showEditDialog by remember { mutableStateOf(false) }
+    var selectedFavorite by remember { mutableStateOf<FavoriteLocation?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -43,43 +54,31 @@ fun FavoriteScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             items(viewModel.favorites) { favorite ->
-                FavoriteItem(favorite) {
-                    viewModel.removeFavorite(favorite)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FavoriteItem(
-    favorite: FavoriteLocation,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(favorite.title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Lat: ${favorite.latLng.latitude.format(4)}, Lng: ${favorite.latLng.longitude.format(4)}",
-                    style = MaterialTheme.typography.bodyMedium
+                FavoriteItem(
+                    favorite = favorite,
+                    onDelete = { viewModel.removeFavorite(favorite) },
+                    onEdit = {
+                        selectedFavorite = favorite
+                        showEditDialog = true
+                    }
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
-            }
         }
+    }
+    if (showEditDialog) {
+        EditFavoriteDialog(
+            currentTitle = selectedFavorite?.title.orEmpty(),
+            onConfirm = { newTitle ->
+                selectedFavorite?.let {
+                    viewModel.updateFavoriteTitle(it, newTitle)
+                }
+                showEditDialog = false
+            },
+            onDismiss = { showEditDialog = false }
+        )
     }
 }
 
-private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 @Preview(showBackground = true)
 @Composable

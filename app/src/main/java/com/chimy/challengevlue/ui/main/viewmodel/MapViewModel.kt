@@ -1,5 +1,6 @@
 package com.chimy.challengevlue.ui.main.viewmodel
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
 
@@ -18,7 +19,7 @@ data class FavoriteLocation(
  */
 open class MapViewModel : ViewModel() {
 
-    private val _favorites = mutableListOf<FavoriteLocation>()
+    private val _favorites = mutableStateListOf<FavoriteLocation>()
     open val favorites: List<FavoriteLocation> get() = _favorites
 
     fun addFavorite(location: FavoriteLocation) {
@@ -27,5 +28,12 @@ open class MapViewModel : ViewModel() {
 
     fun removeFavorite(location: FavoriteLocation) {
         _favorites.remove(location)
+    }
+
+    fun updateFavoriteTitle(favorite: FavoriteLocation, newTitle: String) {
+        val index = _favorites.indexOf(favorite)
+        if (index != -1) {
+            _favorites[index] = favorite.copy(title = newTitle)
+        }
     }
 }
