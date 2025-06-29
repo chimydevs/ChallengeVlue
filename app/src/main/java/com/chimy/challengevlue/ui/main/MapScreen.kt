@@ -4,7 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Typeface
+import android.location.Geocoder
 import android.location.Location
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -12,7 +17,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -36,8 +40,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 /**
  * Displays a GoogleMap centered on Miami.
@@ -85,6 +91,27 @@ fun MapScreen(
             mv.getMapAsync { gMap ->
                 googleMap = gMap
 
+                gMap.setInfoWindowAdapter(object : GoogleMap.InfoWindowAdapter {
+                    override fun getInfoContents(marker: Marker): View? {
+                        val context = mapView.context
+                        return LinearLayout(context).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setPadding(20, 10, 20, 10)
+
+                            addView(TextView(context).apply {
+                                text = marker.title
+                                setTypeface(null, Typeface.BOLD)
+                            })
+
+                            addView(TextView(context).apply {
+                                text = marker.snippet
+                            })
+                        }
+                    }
+
+                    override fun getInfoWindow(marker: Marker): View? = null
+                })
+
                 val defaultLatLng = LatLng(25.7617, -80.1918)
                 gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
                 gMap.addMarker(
@@ -105,8 +132,8 @@ fun MapScreen(
                 for (favorite in viewModel.favorites) {
                     val snippet = viewModel.userLocation?.let { userLoc ->
                         val miles = userLoc.distanceToMiles(favorite.latLng)
-                        "Distance: %.2f mi".format(miles)
-                    } ?: "Unknown distance"
+                        "Distance: %.2f mi • %s".format(miles, favorite.address)
+                    } ?: favorite.address
 
 
                     gMap.addMarker(
@@ -147,15 +174,17 @@ fun MapScreen(
             ShowAddFavoriteDialog(
                 distanceText = pendingDistance,
                 onConfirm = { inputName ->
+                    val address = getAddressFromLatLng(context, pendingLatLng!!)
+
                     val marker = googleMap?.addMarker(
                         MarkerOptions()
                             .position(pendingLatLng!!)
                             .title(inputName)
-                            .snippet(pendingDistance)
+                            .snippet("${pendingDistance}\n$address")
                     )
                     marker?.showInfoWindow()
 
-                    viewModel.addFavorite(FavoriteLocation(inputName, pendingLatLng!!))
+                    viewModel.addFavorite(FavoriteLocation(inputName, pendingLatLng!!, address))
                     showDialog = false
                 },
                 onDismiss = { showDialog = false }
@@ -242,4 +271,18 @@ fun LatLng.distanceToMiles(other: LatLng): Float {
     }
     val meters = start.distanceTo(end)
     return meters * 0.000621371f
+}
+
+fun getAddressFromLatLng(context: Context, latLng: LatLng): String {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        if (addresses != null && addresses.isNotEmpty()) {
+            addresses[0].getAddressLine(0) ?: "Unknown address"
+        } else {
+            "Unknown address"
+        }
+    } catch (e: Exception) {
+        "Unknown address"
+    }
 }

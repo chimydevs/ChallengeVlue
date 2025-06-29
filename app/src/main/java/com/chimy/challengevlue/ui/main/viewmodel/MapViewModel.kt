@@ -10,7 +10,8 @@ import com.google.android.gms.maps.model.LatLng
  */
 data class FavoriteLocation(
     val title: String,
-    val latLng: LatLng
+    val latLng: LatLng,
+    val address: String
 )
 
 /**

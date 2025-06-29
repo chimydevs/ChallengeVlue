@@ -53,11 +53,12 @@ fun FavoriteItem(
                 Column {
                     Text(favorite.title, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Lat: ${favorite.latLng.latitude.format(4)}, Lng: ${
-                            favorite.latLng.longitude.format(
-                                4
-                            )
-                        }",
+                        favorite.address,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Lat: ${favorite.latLng.latitude.format(4)}, Lng: ${favorite.latLng.longitude.format(4)}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -81,7 +82,7 @@ private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 fun FavoriteItemPreview() {
     ChallengeVlueTheme {
         FavoriteItem(
-            favorite = FavoriteLocation("Home", LatLng(25.76, -80.19)),
+            favorite = FavoriteLocation("Home", LatLng(25.76, -80.19), "123 Main St"),
             onDelete = {},
             onEdit = {}
         )
