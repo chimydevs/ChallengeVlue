@@ -76,12 +76,8 @@ fun MapScreen(
 private fun setupMap(googleMap: GoogleMap, context: Context) {
     val defaultLatLng = LatLng(25.7617, -80.1918) // Miami coordinates
     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
-    googleMap.addMarker(
-        MarkerOptions()
-            .position(defaultLatLng)
-            .title("Miami")
-    )
 
+    // Only enable user location if permission is granted
     if (hasLocationPermission(context)) {
         enableUserLocation(context, googleMap)
     }
