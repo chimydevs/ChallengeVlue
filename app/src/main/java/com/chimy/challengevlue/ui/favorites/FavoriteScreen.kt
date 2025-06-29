@@ -18,10 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.chimy.challengevlue.domain.FavoriteLocation
 import com.chimy.challengevlue.ui.components.EditFavoriteDialog
 import com.chimy.challengevlue.ui.components.FavoriteItem
-import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
 import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
+import org.koin.androidx.compose.koinViewModel
 
 /**
  * Screen that displays the list of favorite locations.
@@ -29,11 +30,11 @@ import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoriteScreen(
-    viewModel: MapViewModel,
     onBack: () -> Unit
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedFavorite by remember { mutableStateOf<FavoriteLocation?>(null) }
+    val viewModel: MapViewModel = koinViewModel()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

@@ -39,8 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.chimy.challengevlue.domain.FavoriteLocation
 import com.chimy.challengevlue.ui.components.MapTypeSelector
-import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
 import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -49,10 +49,15 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 /**
- * Displays a GoogleMap centered on Miami.
+ * Main map screen. Displays a GoogleMap centered on Miami by default,
+ * lets the user change the map type, add custom markers showing distance
+ * from their location, and view geocoded addresses.
+ *
+ * Includes a floating button to toggle full screen mode (hiding BottomNavBar).
  */
 
 @SuppressLint("MissingPermission")
@@ -60,7 +65,7 @@ import java.util.Locale
 fun MapScreen(
     context: Context,
     modifier: Modifier = Modifier,
-    viewModel: MapViewModel = remember { MapViewModel() },
+    viewModel: MapViewModel = koinViewModel(),
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit
 ) {

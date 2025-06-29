@@ -2,35 +2,37 @@ package com.chimy.challengevlue.ui.main.viewmodel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import com.chimy.challengevlue.domain.FavoriteLocation
+import com.chimy.challengevlue.domain.usecase.FavoriteUseCase
 import com.google.android.gms.maps.model.LatLng
 
-/**
- * Represents a favorite location selected by the user,
- * with a title and LatLng coordinates.
- */
-data class FavoriteLocation(
-    val title: String,
-    val latLng: LatLng,
-    val address: String
-)
+
 
 /**
  * ths manages favorite locations.
  * keeps an in-memory list of favorites and exposes simple operations.
  */
-open class MapViewModel : ViewModel() {
+class MapViewModel(
+    private val favoriteUseCase: FavoriteUseCase
+) : ViewModel() {
 
     private val _favorites = mutableStateListOf<FavoriteLocation>()
-    open val favorites: List<FavoriteLocation> get() = _favorites
+    val favorites: List<FavoriteLocation> = _favorites
 
     var userLocation: LatLng? = null
         private set
 
+    init {
+        _favorites.addAll(favoriteUseCase.getFavorites())
+    }
+
     fun addFavorite(location: FavoriteLocation) {
+        favoriteUseCase.addFavorite(location)
         _favorites.add(location)
     }
 
     fun removeFavorite(location: FavoriteLocation) {
+        favoriteUseCase.removeFavorite(location)
         _favorites.remove(location)
     }
 
@@ -44,5 +46,4 @@ open class MapViewModel : ViewModel() {
     fun setUserLocation(latLng: LatLng) {
         userLocation = latLng
     }
-
 }

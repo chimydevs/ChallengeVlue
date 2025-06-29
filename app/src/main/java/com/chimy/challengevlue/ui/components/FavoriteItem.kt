@@ -16,10 +16,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
+import com.chimy.challengevlue.domain.FavoriteLocation
 import com.chimy.challengevlue.ui.theme.ChallengeVlueTheme
 import com.google.android.gms.maps.model.LatLng
 
@@ -55,6 +56,7 @@ fun FavoriteItem(
                     Text(
                         favorite.address,
                         style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
@@ -63,7 +65,10 @@ fun FavoriteItem(
                     )
                 }
             }
-            Row {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.End
+            ) {
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }

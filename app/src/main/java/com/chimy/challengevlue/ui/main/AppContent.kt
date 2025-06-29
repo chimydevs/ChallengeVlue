@@ -13,15 +13,16 @@ import com.chimy.challengevlue.ui.components.BottomNavLayout
 import com.chimy.challengevlue.ui.favorites.FavoriteScreen
 import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
 import com.chimy.challengevlue.ui.settings.SettingsScreen
+import org.koin.androidx.compose.koinViewModel
 
 /**
  * Entry point composable for the app that handles switching
  * between the map and the favorites list.
  */
 @Composable
-fun AppContent() {
+fun AppContent( ) {
     val context = LocalContext.current
-    val viewModel = remember { MapViewModel() }
+    val viewModel: MapViewModel = koinViewModel()
 
 
     var currentScreen by remember { mutableStateOf("map") }
@@ -37,7 +38,6 @@ fun AppContent() {
             )
 
             "favorites" -> FavoriteScreen(
-                viewModel = viewModel,
                 onBack = { currentScreen = "map" }
             )
 
