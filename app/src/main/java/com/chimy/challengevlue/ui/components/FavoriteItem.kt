@@ -3,7 +3,9 @@ package com.chimy.challengevlue.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -42,31 +44,38 @@ fun FavoriteItem(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
-            Row {
-                Icon(
-                    imageVector = Icons.Default.Place,
-                    contentDescription = "Location Icon",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Column {
-                    Text(favorite.title, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        favorite.address,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "Location Icon",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        "Lat: ${favorite.latLng.latitude.format(4)}, Lng: ${favorite.latLng.longitude.format(4)}",
-                        style = MaterialTheme.typography.bodyMedium
+                        favorite.title,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    favorite.address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Lat: ${favorite.latLng.latitude.format(4)}, Lng: ${favorite.latLng.longitude.format(4)}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
+
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.End
             ) {
                 IconButton(onClick = onEdit) {
@@ -80,6 +89,7 @@ fun FavoriteItem(
     }
 }
 
+
 private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 @Preview
@@ -87,7 +97,7 @@ private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 fun FavoriteItemPreview() {
     ChallengeVlueTheme {
         FavoriteItem(
-            favorite = FavoriteLocation("Home", LatLng(25.76, -80.19), "123 Main St"),
+            favorite = FavoriteLocation("Home", LatLng(25.76, -80.19), "123 Main asdasdasdasdasaasdasdasdasdasasaasdasasdasdasdsadddsasdassdasdasdasdasdSt"),
             onDelete = {},
             onEdit = {}
         )
