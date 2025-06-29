@@ -7,9 +7,13 @@ import android.content.pm.PackageManager
 import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -20,10 +24,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.chimy.challengevlue.ui.components.MapTypeSelector
 import com.chimy.challengevlue.ui.main.viewmodel.FavoriteLocation
 import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationServices
@@ -53,6 +59,8 @@ fun MapScreen(
     var pendingLatLng by remember { mutableStateOf<LatLng?>(null) }
     var pendingDistance by remember { mutableStateOf("") }
 
+    var mapType by remember { mutableStateOf(GoogleMap.MAP_TYPE_NORMAL) }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -69,76 +77,90 @@ fun MapScreen(
         }
     }
 
-    AndroidView(
-        factory = { mapView },
-        modifier = modifier
-    ) { mv ->
-        mv.getMapAsync { gMap ->
-            googleMap = gMap
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { mapView },
+            modifier = modifier
+        ) { mv ->
+            mv.getMapAsync { gMap ->
+                googleMap = gMap
 
-            val defaultLatLng = LatLng(25.7617, -80.1918)
-            gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
-            gMap.addMarker(
-                MarkerOptions()
-                    .position(defaultLatLng)
-                    .title("Miami")
-            )
-
-            if (hasLocationPermission(context)) {
-                val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-                fusedClient.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        lastUserLatLng = LatLng(it.latitude, it.longitude)
-                    }
-                }
-            }
-
-            for (favorite in viewModel.favorites) {
-                val snippet = viewModel.userLocation?.let { userLoc ->
-                    val miles = userLoc.distanceToMiles(favorite.latLng)
-                    "Distance: %.2f mi".format(miles)
-                } ?: "Unknown distance"
-
-
+                val defaultLatLng = LatLng(25.7617, -80.1918)
+                gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 12f))
                 gMap.addMarker(
                     MarkerOptions()
-                        .position(favorite.latLng)
-                        .title(favorite.title)
-                        .snippet(snippet)
+                        .position(defaultLatLng)
+                        .title("Miami")
                 )
-            }
 
-            gMap.setOnMapClickListener { latLng ->
-                val distance = viewModel.userLocation?.let { userLoc ->
-                    val miles = userLoc.distanceToMiles(latLng)
-                    "Distance: %.2f mi".format(miles)
-                } ?: "Unknown distance"
+                if (hasLocationPermission(context)) {
+                    val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+                    fusedClient.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            lastUserLatLng = LatLng(it.latitude, it.longitude)
+                        }
+                    }
+                }
+
+                for (favorite in viewModel.favorites) {
+                    val snippet = viewModel.userLocation?.let { userLoc ->
+                        val miles = userLoc.distanceToMiles(favorite.latLng)
+                        "Distance: %.2f mi".format(miles)
+                    } ?: "Unknown distance"
 
 
-                pendingLatLng = latLng
-                pendingDistance = distance
-                showDialog = true
+                    gMap.addMarker(
+                        MarkerOptions()
+                            .position(favorite.latLng)
+                            .title(favorite.title)
+                            .snippet(snippet)
+                    )
+                }
+
+                gMap.setOnMapClickListener { latLng ->
+                    val distance = viewModel.userLocation?.let { userLoc ->
+                        val miles = userLoc.distanceToMiles(latLng)
+                        "Distance: %.2f mi".format(miles)
+                    } ?: "Unknown distance"
+
+
+                    pendingLatLng = latLng
+                    pendingDistance = distance
+                    showDialog = true
+                }
             }
         }
-    }
 
-    if (showDialog && pendingLatLng != null) {
-        ShowAddFavoriteDialog(
-            distanceText = pendingDistance,
-            onConfirm = { inputName ->
-                val marker = googleMap?.addMarker(
-                    MarkerOptions()
-                        .position(pendingLatLng!!)
-                        .title(inputName)
-                        .snippet(pendingDistance)
-                )
-                marker?.showInfoWindow()
+        LaunchedEffect(mapType) {
+            googleMap?.mapType = mapType
+        }
 
-                viewModel.addFavorite(FavoriteLocation(inputName, pendingLatLng!!))
-                showDialog = false
-            },
-            onDismiss = { showDialog = false }
+        MapTypeSelector(
+            currentType = mapType,
+            onTypeSelected = { mapType = it },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start =50.dp, bottom =100.dp)
         )
+
+        if (showDialog && pendingLatLng != null) {
+            ShowAddFavoriteDialog(
+                distanceText = pendingDistance,
+                onConfirm = { inputName ->
+                    val marker = googleMap?.addMarker(
+                        MarkerOptions()
+                            .position(pendingLatLng!!)
+                            .title(inputName)
+                            .snippet(pendingDistance)
+                    )
+                    marker?.showInfoWindow()
+
+                    viewModel.addFavorite(FavoriteLocation(inputName, pendingLatLng!!))
+                    showDialog = false
+                },
+                onDismiss = { showDialog = false }
+            )
+        }
     }
 }
 
