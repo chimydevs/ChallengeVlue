@@ -56,4 +56,12 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Google Maps & Location
+    implementation(libs.google.maps)
+    implementation(libs.google.location)
+
+// Koin
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
 }
