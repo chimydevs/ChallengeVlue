@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -93,19 +94,55 @@ private fun setupMap(
         enableUserLocation(context, googleMap)
     }
 
-    googleMap.setOnMapClickListener { latLng ->
-        val title = "Favorite at ${latLng.latitude.format(4)}, ${latLng.longitude.format(4)}"
+    for (favorite in viewModel.favorites) {
         googleMap.addMarker(
             MarkerOptions()
-                .position(latLng)
-                .title(title)
+                .position(favorite.latLng)
+                .title(favorite.title)
         )
-        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
+    }
 
-        viewModel.addFavorite(FavoriteLocation(title, latLng))
+    googleMap.setOnMapClickListener { latLng ->
+        showAddFavoriteDialog(context, googleMap, viewModel, latLng)
     }
 }
 private fun Double.format(digits: Int) = "%.${digits}f".format(this)
+
+private fun showAddFavoriteDialog(
+    context: Context,
+    googleMap: GoogleMap,
+    viewModel: MapViewModel,
+    latLng: LatLng
+) {
+    val activity = context as? ComponentActivity ?: return
+    activity.runOnUiThread {
+        var inputName = ""
+
+        val editText = android.widget.EditText(context).apply {
+            hint = "Enter place name"
+        }
+
+        android.app.AlertDialog.Builder(context)
+            .setTitle("Save location")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                inputName = editText.text.toString().ifEmpty { "Unnamed place" }
+
+                viewModel.addFavorite(FavoriteLocation(inputName, latLng))
+
+                val marker = googleMap.addMarker(
+                    MarkerOptions()
+                        .position(latLng)
+                        .title(inputName)
+                        .snippet("Lat: ${latLng.latitude.format(4)}, Lng: ${latLng.longitude.format(4)}")
+                )
+                marker?.showInfoWindow()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+}
+
 
 //Enables showing the user's location on the map and moves the camera to it.
 @SuppressLint("MissingPermission")
