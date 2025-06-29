@@ -16,12 +16,16 @@ data class FavoriteLocation(
  * ths manages favorite locations.
  * keeps an in-memory list of favorites and exposes simple operations.
  */
-class MapViewModel : ViewModel() {
+open class MapViewModel : ViewModel() {
 
     private val _favorites = mutableListOf<FavoriteLocation>()
-    val favorites: List<FavoriteLocation> get() = _favorites
+    open val favorites: List<FavoriteLocation> get() = _favorites
 
     fun addFavorite(location: FavoriteLocation) {
         _favorites.add(location)
+    }
+
+    fun removeFavorite(location: FavoriteLocation) {
+        _favorites.remove(location)
     }
 }
