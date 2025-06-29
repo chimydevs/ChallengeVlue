@@ -18,7 +18,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +60,9 @@ import java.util.Locale
 fun MapScreen(
     context: Context,
     modifier: Modifier = Modifier,
-    viewModel: MapViewModel = remember { MapViewModel() }
+    viewModel: MapViewModel = remember { MapViewModel() },
+    isFullScreen: Boolean,
+    onToggleFullScreen: () -> Unit
 ) {
     val mapView = rememberMapViewWithLifecycle(context)
 
@@ -161,6 +169,21 @@ fun MapScreen(
         LaunchedEffect(mapType) {
             googleMap?.mapType = mapType
         }
+
+        FloatingActionButton(
+            onClick = { onToggleFullScreen() },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start =50.dp, top = 50.dp)
+                .size(48.dp)
+        ) {
+            Icon(
+                imageVector = if (isFullScreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+                contentDescription = if (isFullScreen) "Exit Fullscreen" else "Enter Fullscreen"
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
 
         MapTypeSelector(
             currentType = mapType,

@@ -1,10 +1,13 @@
 package com.chimy.challengevlue.ui.main
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.chimy.challengevlue.ui.components.BottomNavLayout
 import com.chimy.challengevlue.ui.favorites.FavoriteScreen
@@ -22,19 +25,33 @@ fun AppContent() {
 
 
     var currentScreen by remember { mutableStateOf("map") }
+    var isFullScreen by remember { mutableStateOf(false) }
 
-    BottomNavLayout(
-        currentScreen = currentScreen,
-        onNavigate = { currentScreen = it }
-    ) {
+    Box(Modifier.fillMaxSize()) {
         when (currentScreen) {
-            "map" -> MapScreen(context, viewModel = viewModel)
+            "map" -> MapScreen(
+                context = context,
+                viewModel = viewModel,
+                isFullScreen = isFullScreen,
+                onToggleFullScreen = { isFullScreen = !isFullScreen }
+            )
+
             "favorites" -> FavoriteScreen(
                 viewModel = viewModel,
                 onBack = { currentScreen = "map" }
             )
-            "profile" -> SettingsScreen(onBack = { currentScreen = "map" })
+
+            "profile" -> SettingsScreen(
+                onBack = { currentScreen = "map" }
+            )
+        }
+
+        if (!isFullScreen) {
+            BottomNavLayout(
+                currentScreen = currentScreen,
+                onNavigate = { currentScreen = it },
+                content = {}
+            )
         }
     }
-
 }

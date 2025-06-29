@@ -20,24 +20,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 
 
 @Composable
 fun BottomNavLayout(
     currentScreen: String,
     onNavigate: (String) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
+    visible: Boolean = true,
 ) {
     Box(Modifier.fillMaxSize()) {
         content()
 
-        BottomNavBar(
-            currentScreen = currentScreen,
-            onNavigate = onNavigate,
+        AnimatedVisibility(
+            visible = visible,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
-        )
+        ) {
+            BottomNavBar(
+                currentScreen = currentScreen,
+                onNavigate = onNavigate,
+            )
+        }
     }
 }
 
