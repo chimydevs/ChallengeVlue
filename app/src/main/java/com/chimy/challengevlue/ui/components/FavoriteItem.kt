@@ -33,7 +33,9 @@ fun FavoriteItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -45,6 +47,7 @@ fun FavoriteItem(
                 Icon(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Location Icon",
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(end = 8.dp)
                 )
                 Column {

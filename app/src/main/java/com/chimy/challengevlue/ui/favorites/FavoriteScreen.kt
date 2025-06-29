@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,6 +39,7 @@ fun FavoriteScreen(
     var selectedFavorite by remember { mutableStateOf<FavoriteLocation?>(null) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Favorites") },
@@ -83,12 +85,10 @@ fun FavoriteScreen(
 @Preview(showBackground = true)
 @Composable
 fun FavoriteScreenPreview() {
-    // Fake data to simulate favorites
     val fakeFavorites = listOf(
         FavoriteLocation("Home", LatLng(25.76, -80.19)),
     )
 
-    // Fake ViewModel just for preview
     val fakeViewModel = object : MapViewModel() {
         override val favorites: List<FavoriteLocation>
             get() = fakeFavorites

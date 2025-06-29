@@ -1,16 +1,15 @@
 package com.chimy.challengevlue.ui.main
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
+import com.chimy.challengevlue.ui.components.BottomNavLayout
 import com.chimy.challengevlue.ui.favorites.FavoriteScreen
 import com.chimy.challengevlue.ui.main.viewmodel.MapViewModel
+import com.chimy.challengevlue.ui.settings.SettingsScreen
 
 /**
  * Entry point composable for the app that handles switching
@@ -21,25 +20,21 @@ fun AppContent() {
     val context = LocalContext.current
     val viewModel = remember { MapViewModel() }
 
-    var showFavorites by remember { mutableStateOf(false) }
 
-    if (showFavorites) {
-        FavoriteScreen(
-            viewModel = viewModel,
-            onBack = { showFavorites = false }
-        )
-    } else {
-        Box(Modifier.fillMaxSize()) {
-            MapScreen(context = context, viewModel = viewModel)
+    var currentScreen by remember { mutableStateOf("map") }
 
-            FloatingActionButton(
-                onClick = { showFavorites = true },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.List, contentDescription = "Favorites")
-            }
+    BottomNavLayout(
+        currentScreen = currentScreen,
+        onNavigate = { currentScreen = it }
+    ) {
+        when (currentScreen) {
+            "map" -> MapScreen(context, viewModel = viewModel)
+            "favorites" -> FavoriteScreen(
+                viewModel = viewModel,
+                onBack = { currentScreen = "map" }
+            )
+            "profile" -> SettingsScreen(onBack = { currentScreen = "map" })
         }
     }
+
 }

@@ -1,6 +1,7 @@
 package com.chimy.challengevlue.ui.components
 
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,7 +40,8 @@ fun EditFavoriteDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
     )
 }
 
